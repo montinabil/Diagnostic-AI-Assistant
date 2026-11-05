@@ -1,0 +1,11 @@
+{
+  "name": "Diagnostic AI Assistant",
+  "description": "Advanced medical imaging analysis and diagnostic support tool using Gemini Pro with Thinking mode and Google Search integration.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

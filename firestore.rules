@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['id', 'email'])
+        && data.keys().hasOnly(['id', 'email', 'displayName', 'specialty', 'institution', 'createdAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.email is string && data.email.size() <= 256
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 120))
+        && (!('specialty' in data) || (data.specialty is string && data.specialty.size() <= 100))
+        && (!('institution' in data) || (data.institution is string && data.institution.size() <= 150))
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50));
+    }
+
+    function isValidCaseRecord(data) {
+      return data.keys().hasAll(['id', 'userId', 'type', 'description', 'timestamp'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && data.type in ['image', 'video', 'mixed', 'xray']
+        && (!('modality' in data) || data.modality in ['ultrasound', 'xray'])
+        && data.description is string && data.description.size() <= 20000
+        && data.timestamp is number
+        && (!('date' in data) || (data.date is string && data.date.size() <= 100));
+    }
+
+    // User profile match
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming())
+                    && incoming().id == existing().id && incoming().email == existing().email;
+      allow delete: if isOwner(userId);
+
+      // Cases subcollection
+      match /cases/{caseId} {
+        allow get: if isOwner(userId) && isValidId(caseId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(caseId) && incoming().userId == userId && isValidCaseRecord(incoming());
+        allow update: if isOwner(userId) && isValidId(caseId) && incoming().userId == userId && incoming().id == existing().id && isValidCaseRecord(incoming());
+        allow delete: if isOwner(userId) && isValidId(caseId);
+      }
+    }
+  }
+}

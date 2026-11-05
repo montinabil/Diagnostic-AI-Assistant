@@ -1,0 +1,97 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private profile information for a medical professional user",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User ID matching Firebase Auth UID",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "Doctor or clinician email address",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Clinician name and credentials",
+          "maxLength": 120
+        },
+        "specialty": {
+          "type": "string",
+          "description": "Medical specialty such as Radiology, Emergency, Cardiology",
+          "maxLength": 100
+        },
+        "institution": {
+          "type": "string",
+          "description": "Hospital or clinic affiliation",
+          "maxLength": 150
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp ISO string of profile creation"
+        }
+      },
+      "required": ["id", "email"]
+    },
+    "CaseRecord": {
+      "title": "CaseRecord",
+      "description": "Diagnostic imaging scan case record and findings",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the case",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owning clinician",
+          "maxLength": 128
+        },
+        "type": {
+          "type": "string",
+          "description": "Modality media type",
+          "enum": ["image", "video", "mixed", "xray"]
+        },
+        "modality": {
+          "type": "string",
+          "description": "Medical imaging modality",
+          "enum": ["ultrasound", "xray"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Patient clinical presentation and notes",
+          "maxLength": 5000
+        },
+        "date": {
+          "type": "string",
+          "description": "Formatted date of scan",
+          "maxLength": 50
+        },
+        "timestamp": {
+          "type": "number",
+          "description": "Timestamp in epoch milliseconds"
+        },
+        "preview": {
+          "type": "string",
+          "description": "Base64 or URL thumbnail representation"
+        }
+      },
+      "required": ["id", "userId", "type", "description", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Private user profile document owned strictly by the authenticated user"
+    },
+    "/users/{userId}/cases/{caseId}": {
+      "schema": "CaseRecord",
+      "description": "Individual diagnostic case belonging to the clinician"
+    }
+  }
+}
